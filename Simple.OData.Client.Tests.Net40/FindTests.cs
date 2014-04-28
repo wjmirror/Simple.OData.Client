@@ -155,6 +155,18 @@ namespace Simple.OData.Client.Tests
         }
 
         [Fact]
+        public void ExpandODataOrg()
+        {
+            var client = new ODataClient("http://services.odata.org/V3/OData/OData.svc/");
+            IEnumerable<object> productDetails = client
+                .For("Product")
+                .Expand("ProductDetails")
+                .Filter("ID eq 0")
+                .FindEntries();
+            Assert.NotEqual(0, productDetails.Count());
+        }
+
+        [Fact]
         public void Count()
         {
             var count = _client
