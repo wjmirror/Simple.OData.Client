@@ -244,7 +244,29 @@ namespace Simple.OData.Client.Tests
         public void ExpandManyAsList()
         {
             var category = _client
-                .For<CategoryWithProductList>("Categories")
+                .For<CategoryWithList>("Categories")
+                .Expand(x => x.Products)
+                .Filter(x => x.CategoryName == "Beverages")
+                .FindEntry();
+            Assert.Equal(12, category.Products.Count());
+        }
+
+        [Fact]
+        public void ExpandManyAsIList()
+        {
+            var category = _client
+                .For<CategoryWithIList>("Categories")
+                .Expand(x => x.Products)
+                .Filter(x => x.CategoryName == "Beverages")
+                .FindEntry();
+            Assert.Equal(12, category.Products.Count());
+        }
+
+        [Fact]
+        public void ExpandManyAsICollection()
+        {
+            var category = _client
+                .For<CategoryWithICollection>("Categories")
                 .Expand(x => x.Products)
                 .Filter(x => x.CategoryName == "Beverages")
                 .FindEntry();

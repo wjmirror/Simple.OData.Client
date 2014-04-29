@@ -83,7 +83,7 @@ namespace Simple.OData.Client.Extensions
                     (arrayValue as Array).SetValue(ConvertSingle(elementType, item), count++);
                 }
 
-                if (fieldOrPropertyType.IsArray)
+                if (fieldOrPropertyType.IsArray || fieldOrPropertyType.IsInstanceOfType(arrayValue))
                 {
                     return arrayValue;
                 }
@@ -92,9 +92,7 @@ namespace Simple.OData.Client.Extensions
                     var typedef = typeof (IEnumerable<>);
                     var enumerableType = typedef.MakeGenericType(elementType);
                     var ctor = fieldOrPropertyType.GetConstructor(new [] { enumerableType});
-                    return ctor != null 
-                        ? ctor.Invoke(new object[] { arrayValue}) 
-                        : null;
+                    return ctor != null ? ctor.Invoke(new object[] { arrayValue }) : null;
                 }
             };
 
