@@ -402,24 +402,24 @@ namespace Simple.OData.Client.Tests
         }
 
         [Fact]
-        public async Task ImplicitCastToType()
+        public void ImplicitCastToType()
         {
             var x = ODataDynamic.Expression;
-            Product product = await _client
+            Product product = _client
                 .For(x.Products)
                 .Filter(x.ProductName == "Chai")
-                .FindEntryAsync();
+                .FindEntry();
             Assert.Equal("Chai", product.ProductName);
         }
 
         [Fact]
-        public async Task ImplicitCastToTypeNullResult()
+        public void ImplicitCastToTypeNullResult()
         {
             var x = ODataDynamic.Expression;
-            Product product = await _client
+            Product product = _client
                 .For(x.Products)
                 .Filter(x.ProductName == "XYZ")
-                .FindEntryAsync();
+                .FindEntry();
             Assert.Null(product);
         }
     }
