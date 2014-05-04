@@ -105,6 +105,17 @@ namespace Simple.OData.Client.Tests
         }
 
         [Fact]
+        public void StringContainsWithArrayVariable()
+        {
+            var text = new [] {"ai"};
+            var products = _client
+                .For<Product>()
+                .Filter(x => x.ProductName.Contains(text[0]))
+                .FindEntries();
+            Assert.Equal("Chai", products.Single().ProductName);
+        }
+
+        [Fact]
         public void StringNotContains()
         {
             var products = _client
