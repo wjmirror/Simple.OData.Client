@@ -21,6 +21,11 @@ namespace Simple.OData.Client.Extensions
         {
             return type.GetFields(BindingFlags.Public | BindingFlags.Static);
         }
+
+        public static bool IsEnumType(this Type type)
+        {
+            return type.IsEnum;
+        }
 #else
         public static IEnumerable<PropertyInfo> GetDeclaredProperties(this Type type)
         {
@@ -35,6 +40,11 @@ namespace Simple.OData.Client.Extensions
         public static IEnumerable<FieldInfo> GetDeclaredFields(this Type type)
         {
             return typeof(EdmType).GetTypeInfo().DeclaredFields;
+        }
+
+        public static bool IsEnumType(this Type type)
+        {
+            return type.GetTypeInfo().IsEnum;
         }
 #endif
     }
