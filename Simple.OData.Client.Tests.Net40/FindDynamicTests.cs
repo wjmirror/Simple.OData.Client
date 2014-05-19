@@ -321,6 +321,19 @@ namespace Simple.OData.Client.Tests
         }
 
         [Fact]
+        public void NavigateToRecursiveSingleClause()
+        {
+            var x = ODataDynamic.Expression;
+            var employee = _client
+                .For(x.Employees)
+                .Key(14)
+                .NavigateTo(x.Superior.Superior.Subordinates)
+                .Key(3)
+                .FindEntry();
+            Assert.Equal("Janet", employee.FirstName);
+        }
+
+        [Fact]
         public void BaseClassEntries()
         {
             var x = ODataDynamic.Expression;

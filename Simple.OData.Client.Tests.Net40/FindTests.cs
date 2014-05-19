@@ -274,6 +274,18 @@ namespace Simple.OData.Client.Tests
         }
 
         [Fact]
+        public void NavigateToRecursiveSingleClause()
+        {
+            var employee = _client
+                .For("Employees")
+                .Key(14)
+                .NavigateTo("Superior/Superior/Subordinates")
+                .Key(3)
+                .FindEntry();
+            Assert.Equal("Janet", employee["FirstName"]);
+        }
+
+        [Fact]
         public void BaseClassEntries()
         {
             var transport = _client
