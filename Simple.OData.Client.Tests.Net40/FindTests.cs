@@ -162,7 +162,7 @@ namespace Simple.OData.Client.Tests
                 .OrderBy("ProductID")
                 .Expand("Category/Products")
                 .FindEntries().Last();
-            Assert.Equal(10, ((product["Category"] as IDictionary<string, object>)["Products"] as IEnumerable<object>).Count());
+            Assert.Equal(12, ((product["Category"] as IDictionary<string, object>)["Products"] as IEnumerable<object>).Count());
         }
 
         [Fact]

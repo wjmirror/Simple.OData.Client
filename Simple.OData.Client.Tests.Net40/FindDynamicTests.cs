@@ -254,7 +254,7 @@ namespace Simple.OData.Client.Tests
                 .OrderBy(x.ProductID)
                 .Expand(x.Category.Products)
                 .FindEntries() as IEnumerable<dynamic>).Last();
-            Assert.Equal(10, (product.Category.Products as IEnumerable<dynamic>).Count());
+            Assert.Equal(12, (product.Category.Products as IEnumerable<dynamic>).Count());
         }
 
         [Fact]

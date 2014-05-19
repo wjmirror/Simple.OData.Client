@@ -151,7 +151,9 @@
     <EmbeddedResource Include="Resources\SingleProductWithCollectionOfPrimitiveProperties.xml" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\SingleProductWithComplexProperty.xml" />
+    <EmbeddedResource Include="Resources\SingleProductWithComplexProperty.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\SingleProductWithEmptyCollectionOfComplexProperties.xml" />
