@@ -285,6 +285,17 @@ namespace Simple.OData.Client.Tests
         }
 
         [Fact]
+        public void ExpandSecondLevel()
+        {
+            var product = _client
+                .For<Product>()
+                .OrderBy(x => x.ProductID)
+                .Expand(x => x.Category.Products)
+                .FindEntries().Last();
+            Assert.Equal(10, product.Category.Products.Length);
+        }
+
+        [Fact]
         public void OrderBySingle()
         {
             var product = _client
