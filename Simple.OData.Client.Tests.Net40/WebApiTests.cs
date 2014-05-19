@@ -21,19 +21,24 @@ namespace Simple.OData.Client.Tests
         {
             if (_client != null)
             {
-                var products = _client.FindEntries("Products");
-                foreach (var product in products)
-                {
-                    if (product["Name"].ToString().StartsWith("Test"))
-                        _client.DeleteEntry("Products", product);
-                }
+                DeleteTestData();
+            }
+        }
 
-                var workTaskModels = _client.FindEntries("WorkTaskModels");
-                foreach (var workTaskModel in workTaskModels)
-                {
-                    if (workTaskModel["Code"].ToString().StartsWith("Test"))
-                        _client.DeleteEntry("workTaskModels", workTaskModel);
-                }
+        private void DeleteTestData()
+        {
+            var products = _client.FindEntries("Products");
+            foreach (var product in products)
+            {
+                if (product["Name"].ToString().StartsWith("Test"))
+                    _client.DeleteEntry("Products", product);
+            }
+
+            var workTaskModels = _client.FindEntries("WorkTaskModels");
+            foreach (var workTaskModel in workTaskModels)
+            {
+                if (workTaskModel["Code"].ToString().StartsWith("Test"))
+                    _client.DeleteEntry("workTaskModels", workTaskModel);
             }
         }
 
