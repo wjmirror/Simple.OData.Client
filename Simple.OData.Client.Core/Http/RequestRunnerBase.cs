@@ -39,7 +39,8 @@ namespace Simple.OData.Client
                         }
                     }
 
-                    if (request.Method == RestVerbs.PUT || request.Method == RestVerbs.MERGE || request.Method == RestVerbs.DELETE)
+                    if (request.CheckOptimisticConcurrency &&
+                        (request.Method == RestVerbs.PUT || request.Method == RestVerbs.MERGE || request.Method == RestVerbs.DELETE))
                     {
                         httpClient.DefaultRequestHeaders.IfMatch.Add(EntityTagHeaderValue.Any);
                     }
