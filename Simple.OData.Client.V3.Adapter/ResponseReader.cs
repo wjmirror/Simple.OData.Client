@@ -50,12 +50,22 @@ namespace Simple.OData.Client.V3.Adapter
 
         private ODataEntryAnnotations CreateAnnotations(Microsoft.Data.OData.ODataEntry odataEntry)
         {
+            string id = null;
+            Uri readLink = null;
+            Uri editLink = null;
+            if (_session.Adapter.GetMetadata().IsTypeWithId(odataEntry.TypeName))
+            {
+                id = odataEntry.Id;
+                readLink = odataEntry.ReadLink;
+                editLink = odataEntry.EditLink;
+            }
+
             return new ODataEntryAnnotations
             {
-                Id = odataEntry.Id,
+                Id = id,
                 TypeName = odataEntry.TypeName,
-                ReadLink = odataEntry.ReadLink,
-                EditLink = odataEntry.EditLink,
+                ReadLink = readLink,
+                EditLink = editLink,
                 ETag = odataEntry.ETag,
                 AssociationLinks = odataEntry.AssociationLinks == null
                     ? null
@@ -65,16 +75,19 @@ namespace Simple.OData.Client.V3.Adapter
                         Name = x.Name,
                         Uri = x.Url,
                     })),
-                MediaResource = odataEntry.MediaResource == null
-                    ? null
-                    : new ODataEntryAnnotations.MediaResourceAnnotations
-                    {
-                        ContentType = odataEntry.MediaResource.ContentType,
-                        ReadLink = odataEntry.MediaResource.ReadLink,
-                        EditLink = odataEntry.MediaResource.EditLink,
-                        ETag = odataEntry.MediaResource.ETag,
-                    },
+                MediaResource = CreateAnnotations(odataEntry.MediaResource),
                 InstanceAnnotations = odataEntry.InstanceAnnotations,
+            };
+        }
+
+        private ODataMediaAnnotations CreateAnnotations(ODataStreamReferenceValue value)
+        {
+            return value == null ? null : new ODataMediaAnnotations
+            {
+                ContentType = value.ContentType,
+                ReadLink = value.ReadLink,
+                EditLink = value.EditLink,
+                ETag = value.ETag,
             };
         }
 
@@ -130,7 +143,7 @@ namespace Simple.OData.Client.V3.Adapter
                 else if (payloadKind.Any(x => x.PayloadKind == ODataPayloadKind.Property))
                 {
                     var property = messageReader.ReadProperty();
-                    if (property.Value != null && (property.Value.GetType() != typeof (string) || !string.IsNullOrEmpty(property.Value.ToString())))
+                    if (property.Value != null && (property.Value.GetType() != typeof(string) || !string.IsNullOrEmpty(property.Value.ToString())))
                         _hasResponse = true;
 
                     if (_hasResponse)

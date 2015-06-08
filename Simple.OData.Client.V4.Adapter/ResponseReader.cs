@@ -47,26 +47,38 @@ namespace Simple.OData.Client.V4.Adapter
 
         private ODataEntryAnnotations CreateAnnotations(Microsoft.OData.Core.ODataEntry odataEntry)
         {
+            string id = null;
+            Uri readLink = null;
+            Uri editLink = null;
+            if (_session.Adapter.GetMetadata().IsTypeWithId(odataEntry.TypeName))
+            {
+                id = odataEntry.Id.AbsoluteUri;
+                readLink = odataEntry.ReadLink;
+                editLink = odataEntry.EditLink;
+            }
+
             return new ODataEntryAnnotations
             {
-                Id = odataEntry.Id.AbsoluteUri,
+                Id = id,
                 TypeName = odataEntry.TypeName,
-                ReadLink = odataEntry.ReadLink,
-                EditLink = odataEntry.EditLink,
+                ReadLink = readLink,
+                EditLink = editLink,
                 ETag = odataEntry.ETag,
-                MediaResource = odataEntry.MediaResource == null
-                    ? null
-                    : new ODataEntryAnnotations.MediaResourceAnnotations
-                    {
-                        ContentType = odataEntry.MediaResource.ContentType,
-                        ReadLink = odataEntry.MediaResource.ReadLink,
-                        EditLink = odataEntry.MediaResource.EditLink,
-                        ETag = odataEntry.MediaResource.ETag,
-                    },
+                MediaResource = CreateAnnotations(odataEntry.MediaResource),
                 InstanceAnnotations = odataEntry.InstanceAnnotations,
             };
         }
 
+        private ODataMediaAnnotations CreateAnnotations(ODataStreamReferenceValue value)
+        {
+            return value == null ? null : new ODataMediaAnnotations
+            {
+                ContentType = value.ContentType,
+                ReadLink = value.ReadLink,
+                EditLink = value.EditLink,
+                ETag = value.ETag,
+            };
+        }
         public async Task<ODataResponse> GetResponseAsync(IODataResponseMessageAsync responseMessage, bool includeAnnotationsInResults = false)
         {
             var readerSettings = new ODataMessageReaderSettings();
