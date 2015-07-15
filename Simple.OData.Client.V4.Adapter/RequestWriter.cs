@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.OData.Core;
@@ -139,13 +140,13 @@ namespace Simple.OData.Client.V4.Adapter
 
         protected override void AssignHeaders(ODataRequest request)
         {
-            if (request.ResultRequired)
+            switch (request.Method)
             {
-                request.Headers.Add(HttpLiteral.Prefer, HttpLiteral.ReturnRepresentation);
-            }
-            else
-            {
-                request.Headers.Add(HttpLiteral.Prefer, HttpLiteral.ReturnMinimal);
+                case RestVerbs.Post:
+                case RestVerbs.Put:
+                case RestVerbs.Patch:
+                    request.Headers.Add(HttpLiteral.Prefer, request.ResultRequired ? HttpLiteral.ReturnRepresentation : HttpLiteral.ReturnMinimal);
+                    break;
             }
         }
 
