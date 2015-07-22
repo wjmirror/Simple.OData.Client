@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Data.Edm;
 using Microsoft.Data.OData;
-using Simple.OData.Client.Extensions;
 
 #pragma warning disable 1591
 
