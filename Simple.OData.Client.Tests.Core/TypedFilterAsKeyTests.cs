@@ -3,7 +3,12 @@ using Xunit;
 
 namespace Simple.OData.Client.Tests
 {
-    public class TypedFilterAsKeyTests : TestBase
+    public class TypedFilterAsKeyV3Tests : TypedFilterAsKeyTests
+    {
+        public override string MetadataFile { get { return "Northwind.xml"; } }
+    }
+
+    public abstract class TypedFilterAsKeyTests : TestBase
     {
         [Fact]
         public void FindAllByTypedFilterAsKeyEqual()
