@@ -1052,7 +1052,7 @@ namespace Simple.OData.Client
             return await ExecuteDeleteEntriesAsync(command, cancellationToken);
         }
 
-        internal async Task LinkEntryAsync(FluentCommand command, IDictionary<string, object> entryKey, string linkName, IDictionary<string, object> linkedEntryKey, CancellationToken cancellationToken)
+        internal async Task LinkEntryAsync(FluentCommand command, string linkName, IDictionary<string, object> linkedEntryKey, CancellationToken cancellationToken)
         {
             if (IsBatchResponse)
                 return;
@@ -1060,10 +1060,10 @@ namespace Simple.OData.Client
             await _session.ResolveAdapterAsync(cancellationToken);
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
 
-            await ExecuteLinkEntryAsync(new FluentCommand(command).Key(entryKey), linkName, linkedEntryKey, cancellationToken);
+            await ExecuteLinkEntryAsync(new FluentCommand(command).Key(command.KeyValues), linkName, linkedEntryKey, cancellationToken);
         }
 
-        internal async Task UnlinkEntryAsync(FluentCommand command, IDictionary<string, object> entryKey, string linkName, IDictionary<string, object> linkedEntryKey, CancellationToken cancellationToken)
+        internal async Task UnlinkEntryAsync(FluentCommand command, string linkName, IDictionary<string, object> linkedEntryKey, CancellationToken cancellationToken)
         {
             if (IsBatchResponse)
                 return;
@@ -1071,7 +1071,7 @@ namespace Simple.OData.Client
             await _session.ResolveAdapterAsync(cancellationToken);
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
 
-            await ExecuteUnlinkEntryAsync(new FluentCommand(command).Key(entryKey), linkName, linkedEntryKey, cancellationToken);
+            await ExecuteUnlinkEntryAsync(new FluentCommand(command).Key(command.KeyValues), linkName, linkedEntryKey, cancellationToken);
         }
 
         internal async Task ExecuteAsync(FluentCommand command, CancellationToken cancellationToken)
