@@ -58,7 +58,13 @@ namespace Simple.OData.Client
 
         public T AsScalar<T>()
         {
-            return (T)Convert.ChangeType(this.AsEntries().First().First().Value, typeof(T), CultureInfo.InvariantCulture);
+            Func<IDictionary<string, object>, object> extractScalar = x => (x == null) || !x.Any() ? null : x.Values.First();
+            var result = this.AsEntry();
+            var value = result == null ? null : extractScalar(result);
+
+            return value == null 
+                ? default(T) 
+                : (T)Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
         }
 
         public T[] AsArray<T>()

@@ -98,7 +98,7 @@ namespace Simple.OData.Client.V4.Adapter
                     }
                     else
                     {
-                        var text = Utils.StreamToString(await responseMessage.GetStreamAsync());
+                        var text = Utils.StreamToString(await responseMessage.GetStreamAsync(), responseMessage is ODataBatchOperationResponseMessage);
                         return ODataResponse.FromFeed(new[] { new Dictionary<string, object>()
                         {
                             { FluentCommand.ResultLiteral, text }

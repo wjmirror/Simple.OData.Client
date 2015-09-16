@@ -117,10 +117,11 @@ namespace Simple.OData.Client.V3.Adapter
                     else
                     {
 #if SILVERLIGHT
-                        var text = Utils.StreamToString(responseMessage.GetStream());
+                        var stream = responseMessage.GetStream();
 #else
-                        var text = Client.Utils.StreamToString(await responseMessage.GetStreamAsync());
+                        var stream = await responseMessage.GetStreamAsync();
 #endif
+                        var text = Client.Utils.StreamToString(stream, responseMessage is ODataBatchOperationResponseMessage);
                         return ODataResponse.FromFeed(new[] { new Dictionary<string, object>()
                         {
                             { FluentCommand.ResultLiteral, text }

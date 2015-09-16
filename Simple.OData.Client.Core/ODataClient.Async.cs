@@ -453,7 +453,7 @@ namespace Simple.OData.Client
         public async Task<object> FindScalarAsync(string commandText, CancellationToken cancellationToken)
         {
             if (IsBatchResponse)
-                return _batchResponse.AsEntry();
+                return _batchResponse.AsScalar<object>();
 
             await _session.ResolveAdapterAsync(cancellationToken);
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
@@ -464,7 +464,9 @@ namespace Simple.OData.Client
             var result = await ExecuteRequestWithResultAsync(request, cancellationToken,
                 x => x.AsEntries(),
                 () => new IDictionary<string, object>[] {});
-            return result == null ? null : result.FirstOrDefault().Values.First();
+
+            Func<IDictionary<string, object>, object> extractScalar = x => (x == null) || !x.Any() ? null : x.Values.First();
+            return result == null ? null : extractScalar(result.FirstOrDefault());
         }
 
         public Task<IDictionary<string, object>> GetEntryAsync(string collection, params object[] entryKey)
@@ -789,7 +791,9 @@ namespace Simple.OData.Client
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
 
             var result = await ExecuteFunctionAsEnumerableAsync(functionName, parameters, cancellationToken);
-            return result == null
+            return IsBatchRequest
+                ? new T[] {}
+                : result == null
                 ? null
                 : result.SelectMany(x => x.Values)
                         .Select(x => (T)Convert.ChangeType(x, typeof(T), CultureInfo.InvariantCulture))
@@ -891,7 +895,9 @@ namespace Simple.OData.Client
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
 
             var result = await ExecuteActionAsEnumerableAsync(actionName, parameters, cancellationToken);
-            return result == null
+            return IsBatchRequest
+                ? new T[] { }
+                : result == null
                 ? null
                 : result.SelectMany(x => x.Values)
                         .Select(x => (T)Convert.ChangeType(x, typeof(T), CultureInfo.InvariantCulture))
@@ -986,7 +992,7 @@ namespace Simple.OData.Client
         internal async Task<object> FindScalarAsync(FluentCommand command, CancellationToken cancellationToken)
         {
             if (IsBatchResponse)
-                return _batchResponse.AsEntry();
+                return _batchResponse.AsScalar<object>();
 
             await _session.ResolveAdapterAsync(cancellationToken);
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
@@ -1113,7 +1119,9 @@ namespace Simple.OData.Client
                 return _batchResponse.AsScalar<T>();
 
             var result = await ExecuteAsSingleAsync(command, cancellationToken);
-            return result == null 
+            return IsBatchRequest
+                ? default(T)
+                : result == null 
                 ? default(T) 
                 : (T)Convert.ChangeType(result.First().Value, typeof(T), CultureInfo.InvariantCulture);
         }
@@ -1124,7 +1132,9 @@ namespace Simple.OData.Client
                 return _batchResponse.AsArray<T>();
 
             var result = await ExecuteAsEnumerableAsync(command, cancellationToken);
-            return result == null
+            return IsBatchRequest
+                ? new T[] { }
+                : result == null
                 ? null
                 : result.SelectMany(x => x.Values)
                         .Select(x => (T)Convert.ChangeType(x, typeof(T), CultureInfo.InvariantCulture))
