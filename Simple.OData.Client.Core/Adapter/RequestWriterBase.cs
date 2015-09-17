@@ -100,8 +100,8 @@ namespace Simple.OData.Client
                 RestVerbs.Post :
                 RestVerbs.Put;
 
-            var linkContent = await WriteLinkContentAsync(linkIdent);
             var commandText = FormatLinkPath(entryIdent, associationName);
+            var linkContent = await WriteLinkContentAsync(linkMethod, commandText, linkIdent);
             var request = new ODataRequest(linkMethod, _session, commandText, null, linkContent)
             {
                 IsLink = true,
@@ -142,7 +142,7 @@ namespace Simple.OData.Client
 
             if (parameters != null && parameters.Any())
             {
-                entryContent = await WriteActionContentAsync(actionName, parameters);
+                entryContent = await WriteActionContentAsync(RestVerbs.Post, commandText, actionName, parameters);
             }
             else
             {
@@ -158,9 +158,9 @@ namespace Simple.OData.Client
         }
 
         protected abstract Task<Stream> WriteEntryContentAsync(string method, string collection, string commandText, IDictionary<string, object> entryData, bool resultRequired);
-        protected abstract Task<Stream> WriteLinkContentAsync(string linkIdent);
+        protected abstract Task<Stream> WriteLinkContentAsync(string method, string commandText, string linkIdent);
         protected abstract Task<Stream> WriteFunctionContentAsync(string method, string commandText);
-        protected abstract Task<Stream> WriteActionContentAsync(string actionName, IDictionary<string, object> parameters);
+        protected abstract Task<Stream> WriteActionContentAsync(string method, string commandText, string actionName, IDictionary<string, object> parameters);
         protected abstract string FormatLinkPath(string entryIdent, string navigationPropertyName, string linkIdent = null);
         protected abstract void AssignHeaders(ODataRequest request);
 
