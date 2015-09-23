@@ -258,6 +258,14 @@ namespace Simple.OData.Client
             return this;
         }
 
+        public FluentCommand Search(string search)
+        {
+            if (IsBatchResponse) return this;
+
+            _details.Search = search;
+            return this;
+        }
+
         public FluentCommand Skip(int count)
         {
             if (IsBatchResponse) return this;
@@ -502,6 +510,11 @@ namespace Simple.OData.Client
         internal bool HasFilter
         {
             get { return !string.IsNullOrEmpty(_details.Filter) || !ReferenceEquals(_details.FilterExpression, null); }
+        }
+
+        internal bool HasSearch
+        {
+            get { return !string.IsNullOrEmpty(_details.Search); }
         }
 
         public bool HasFunction

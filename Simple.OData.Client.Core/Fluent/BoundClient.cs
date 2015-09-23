@@ -104,6 +104,12 @@ namespace Simple.OData.Client
             return this;
         }
 
+        public IBoundClient<T> Search(string search)
+        {
+            this.Command.Search(search);
+            return this;
+        }
+
         public IBoundClient<T> Function(string functionName)
         {
             this.Command.Function(functionName);
