@@ -145,7 +145,11 @@ namespace Simple.OData.Client.V3.Adapter
                     if (operationParameter == null)
                         throw new UnresolvableObjectException(parameter.Key, string.Format("Parameter [{0}] not found for action [{1}]", parameter.Key, actionName));
 
+#if SILVERLIGHT
+                    WriteOperationParameter(parameterWriter, operationParameter, parameter.Key, parameter.Value);
+#else
                     await WriteOperationParameterAsync(parameterWriter, operationParameter, parameter.Key, parameter.Value);
+#endif
                 }
 
                 parameterWriter.WriteEnd();
@@ -161,7 +165,8 @@ namespace Simple.OData.Client.V3.Adapter
             }
         }
 
-        private async Task WriteOperationParameterAsync(ODataParameterWriter parameterWriter, IEdmFunctionParameter operationParameter, string paramName, object paramValue)
+#if SILVERLIGHT
+        private void WriteOperationParameter(ODataParameterWriter parameterWriter, IEdmFunctionParameter operationParameter, string paramName, object paramValue)
         {
             if (operationParameter.Type.Definition.TypeKind == EdmTypeKind.Collection)
             {
@@ -178,6 +183,25 @@ namespace Simple.OData.Client.V3.Adapter
                 parameterWriter.WriteValue(paramName, paramValue);
             }
         }
+#else
+        private async Task WriteOperationParameterAsync(ODataParameterWriter parameterWriter, IEdmFunctionParameter operationParameter, string paramName, object paramValue)
+        {
+            if (operationParameter.Type.Definition.TypeKind == EdmTypeKind.Collection)
+            {
+                var collectionWriter = await parameterWriter.CreateCollectionWriterAsync(paramName);
+                await collectionWriter.WriteStartAsync(new ODataCollectionStart());
+                foreach (var item in paramValue as IEnumerable)
+                {
+                    await collectionWriter.WriteItemAsync(item);
+                }
+                await collectionWriter.WriteEndAsync();
+            }
+            else
+            {
+                await parameterWriter.WriteValueAsync(paramName, paramValue);
+            }
+        }
+#endif
 
         protected override string FormatLinkPath(string entryIdent, string navigationPropertyName, string linkIdent = null)
         {
