@@ -140,7 +140,7 @@ namespace Simple.OData.Client
             var entryIdent = await FormatEntryKeyAsync(collectionName, entryKey, cancellationToken);
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
 
-            var linkedCollection = _session.Metadata.GetNavigationPropertyPartnerName(collectionName, linkName);
+            var linkedCollection = _session.Metadata.GetNavigationPropertyPartnerTypeName(collectionName, linkName);
             var linkIdent = await FormatEntryKeyAsync(linkedCollection, linkedEntryKey, cancellationToken);
             if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
 
@@ -168,7 +168,7 @@ namespace Simple.OData.Client
             string linkIdent = null;
             if (linkedEntryKey != null)
             {
-                var linkedCollection = _session.Metadata.GetNavigationPropertyPartnerName(collectionName, linkName);
+                var linkedCollection = _session.Metadata.GetNavigationPropertyPartnerTypeName(collectionName, linkName);
                 linkIdent = await FormatEntryKeyAsync(linkedCollection, linkedEntryKey, cancellationToken);
                 if (cancellationToken.IsCancellationRequested) cancellationToken.ThrowIfCancellationRequested();
             }
