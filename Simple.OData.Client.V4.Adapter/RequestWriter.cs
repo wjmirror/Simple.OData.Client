@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.OData.Core;
@@ -347,12 +348,19 @@ namespace Simple.OData.Client.V4.Adapter
                             if (Utils.TryConvert(value, mappedType.Key, out result))
                                 return result;
                         }
-                        throw new FormatException(string.Format("Unable to convert value of type {0} to OData type {1}", value.GetType(), propertyType));
+                        throw new NotSupportedException(string.Format("Conversion is not supported from type {0} to OData type {1}", value.GetType(), propertyType));
                     }
                     return value;
 
                 case EdmTypeKind.Enum:
                     return new ODataEnumValue(value.ToString());
+
+                case EdmTypeKind.None:
+                    if (CustomConverters.HasObjectConverter(value.GetType()))
+                    {
+                        return CustomConverters.Convert(value, value.GetType());
+                    }
+                    throw new NotSupportedException(string.Format("Conversion is not supported from type {0} to OData type {1}", value.GetType(), propertyType));
 
                 default:
                     return value;
