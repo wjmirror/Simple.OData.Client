@@ -48,14 +48,13 @@ namespace Simple.OData.Client
             else
             {
                 var left = FormatExpression(_left, context);
-                var right = FormatExpression(_right, context);
-                var op = FormatOperator(context);
                 if (NeedsGrouping(_left))
-                    return string.Format("({0}) {1} {2}", left, op, right);
-                else if (NeedsGrouping(_right))
-                    return string.Format("{0} {1} ({2})", left, op, right);
-                else
-                    return string.Format("{0} {1} {2}", left, op, right);
+                    left = string.Format("({0})", left);
+                var right = FormatExpression(_right, context);
+                if (NeedsGrouping(_right))
+                    right = string.Format("({0})", right);
+                var op = FormatOperator(context);
+                return string.Format("{0} {1} {2}", left, op, right);
             }
         }
 
