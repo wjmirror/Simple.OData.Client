@@ -101,6 +101,11 @@ namespace Simple.OData.Client
             {
                 return FormatArrayIndexFunction(context);
             }
+            else if (string.Equals(this.Function.FunctionName, "HasFlag", StringComparison.Ordinal) &&
+                            this.Function.Arguments.Count == 1)
+            {
+                return FormatEnumHasFlagFunction(context);
+            }
             else if (string.Equals(this.Function.FunctionName, "ToString", StringComparison.Ordinal) &&
                 this.Function.Arguments.Count == 0)
             {
