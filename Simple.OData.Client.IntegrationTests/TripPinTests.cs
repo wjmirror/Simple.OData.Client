@@ -934,6 +934,18 @@ namespace Simple.OData.Client.Tests
             Assert.Null(tripEvent);
         }
 
+        [Fact]
+        public async Task GetFavoriteAirline()
+        {
+            var airport = await _client
+                .For<Person>()
+                .Key("russellwhyte")
+                .Function("GetFavoriteAirline")
+                .ExecuteAsArrayAsync<Airline>();
+
+            Assert.Equal("AA", airport.First().AirlineCode);
+        }
+
         private Event CreateTestEvent()
         {
             return new Event
