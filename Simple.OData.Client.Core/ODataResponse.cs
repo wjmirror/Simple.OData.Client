@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using Simple.OData.Client.Extensions;
 
 #pragma warning disable 1591
 
@@ -18,7 +16,6 @@ namespace Simple.OData.Client
         public ODataFeedAnnotations Annotations { get; private set; }
         public IList<ODataResponse> Batch { get; private set; }
         public Exception Exception { get; private set; }
-        public string DynamicPropertiesContainerName { get; private set; }
 
         private ODataResponse()
         {
@@ -40,11 +37,6 @@ namespace Simple.OData.Client
             }
         }
 
-        public IEnumerable<T> AsEntries<T>(string dynamicPropertiesContainerName) where T : class
-        {
-            return this.AsEntries().Select(x => x.ToObject<T>(dynamicPropertiesContainerName));
-        }
-
         public IDictionary<string, object> AsEntry()
         {
             var result = AsEntries();
@@ -52,11 +44,6 @@ namespace Simple.OData.Client
             return result != null
                 ? result.FirstOrDefault()
                 : null;
-        }
-
-        public T AsEntry<T>(string dynamicPropertiesContainerName) where T : class
-        {
-            return this.AsEntry().ToObject<T>(dynamicPropertiesContainerName);
         }
 
         public T AsScalar<T>()
