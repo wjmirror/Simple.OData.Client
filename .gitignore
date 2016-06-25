@@ -31,3 +31,4 @@ Simple.OData.ProductService/Properties/PublishProfiles/va-odata-integration - FT
 Simple.OData.ProductService/Properties/PublishProfiles/va-odata-integration - Web Deploy.pubxml
 Simple.OData.Client.AdHocTests/
 Solutions/AdHocTests.sln
+nuget.exe
