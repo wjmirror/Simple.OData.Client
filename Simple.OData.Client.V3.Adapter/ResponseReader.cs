@@ -27,68 +27,6 @@ namespace Simple.OData.Client.V3.Adapter
             return GetResponseAsync(new ODataResponseMessage(responseMessage), includeAnnotationsInResults);
         }
 
-        protected override void ConvertEntry(ResponseNode entryNode, object entry, bool includeAnnotationsInResults)
-        {
-            if (entry != null)
-            {
-                var odataEntry = entry as Microsoft.Data.OData.ODataEntry;
-                foreach (var property in odataEntry.Properties)
-                {
-                    entryNode.Entry.Add(property.Name, GetPropertyValue(property.Value));
-                }
-                if (includeAnnotationsInResults)
-                {
-                    var resourceType = odataEntry.TypeName;
-                    entryNode.Entry.Add(FluentCommand.ResourceTypeLiteral, resourceType.Split('.').Last());
-                    var annotations = CreateAnnotations(odataEntry);
-                    entryNode.Entry.Add(FluentCommand.AnnotationsLiteral, annotations);
-                }
-            }
-        }
-
-        private ODataEntryAnnotations CreateAnnotations(Microsoft.Data.OData.ODataEntry odataEntry)
-        {
-            string id = null;
-            Uri readLink = null;
-            Uri editLink = null;
-            if (_session.Adapter.GetMetadata().IsTypeWithId(odataEntry.TypeName))
-            {
-                id = odataEntry.Id;
-                readLink = odataEntry.ReadLink;
-                editLink = odataEntry.EditLink;
-            }
-
-            return new ODataEntryAnnotations
-            {
-                Id = id,
-                TypeName = odataEntry.TypeName,
-                ReadLink = readLink,
-                EditLink = editLink,
-                ETag = odataEntry.ETag,
-                AssociationLinks = odataEntry.AssociationLinks == null
-                    ? null
-                    : new List<ODataEntryAnnotations.AssociationLink>(
-                    odataEntry.AssociationLinks.Select(x => new ODataEntryAnnotations.AssociationLink
-                    {
-                        Name = x.Name,
-                        Uri = x.Url,
-                    })),
-                MediaResource = CreateAnnotations(odataEntry.MediaResource),
-                InstanceAnnotations = odataEntry.InstanceAnnotations,
-            };
-        }
-
-        private ODataMediaAnnotations CreateAnnotations(ODataStreamReferenceValue value)
-        {
-            return value == null ? null : new ODataMediaAnnotations
-            {
-                ContentType = value.ContentType,
-                ReadLink = value.ReadLink,
-                EditLink = value.EditLink,
-                ETag = value.ETag,
-            };
-        }
-
 #if SILVERLIGHT
         public async Task<ODataResponse> GetResponseAsync(IODataResponseMessage responseMessage, bool includeAnnotationsInResults = false)
 #else
@@ -237,11 +175,11 @@ namespace Simple.OData.Client.V3.Adapter
                 switch (odataReader.State)
                 {
                     case ODataReaderState.FeedStart:
-                        StartFeed(nodeStack, CreateFeedDetails(odataReader.Item as ODataFeed));
+                        StartFeed(nodeStack, CreateAnnotations(odataReader.Item as ODataFeed));
                         break;
 
                     case ODataReaderState.FeedEnd:
-                        EndFeed(nodeStack, CreateFeedDetails(odataReader.Item as ODataFeed), ref rootNode);
+                        EndFeed(nodeStack, CreateAnnotations(odataReader.Item as ODataFeed), ref rootNode);
                         break;
 
                     case ODataReaderState.EntryStart:
@@ -257,7 +195,7 @@ namespace Simple.OData.Client.V3.Adapter
                         break;
 
                     case ODataReaderState.NavigationLinkEnd:
-                        EndNavigationLink(nodeStack);
+                        EndNavigationLink(nodeStack, includeAnnotationsInResults);
                         break;
                 }
             }
@@ -267,7 +205,26 @@ namespace Simple.OData.Client.V3.Adapter
                 : ODataResponse.FromEntry(rootNode.Entry);
         }
 
-        private ODataFeedAnnotations CreateFeedDetails(ODataFeed feed)
+        protected override void ConvertEntry(ResponseNode entryNode, object entry, bool includeAnnotationsInResults)
+        {
+            if (entry != null)
+            {
+                var odataEntry = entry as Microsoft.Data.OData.ODataEntry;
+                foreach (var property in odataEntry.Properties)
+                {
+                    entryNode.Entry.Add(property.Name, GetPropertyValue(property.Value));
+                }
+                if (includeAnnotationsInResults)
+                {
+                    var resourceType = odataEntry.TypeName;
+                    entryNode.Entry.Add(FluentCommand.ResourceTypeLiteral, resourceType.Split('.').Last());
+                    var annotations = CreateAnnotations(odataEntry);
+                    entryNode.Entry.Add(FluentCommand.AnnotationsLiteral, annotations);
+                }
+            }
+        }
+
+        private ODataFeedAnnotations CreateAnnotations(ODataFeed feed)
         {
             return new ODataFeedAnnotations()
             {
@@ -276,6 +233,49 @@ namespace Simple.OData.Client.V3.Adapter
                 DeltaLink = feed.DeltaLink,
                 NextPageLink = feed.NextPageLink,
                 InstanceAnnotations = feed.InstanceAnnotations,
+            };
+        }
+
+        private ODataEntryAnnotations CreateAnnotations(Microsoft.Data.OData.ODataEntry odataEntry)
+        {
+            string id = null;
+            Uri readLink = null;
+            Uri editLink = null;
+            if (_session.Adapter.GetMetadata().IsTypeWithId(odataEntry.TypeName))
+            {
+                id = odataEntry.Id;
+                readLink = odataEntry.ReadLink;
+                editLink = odataEntry.EditLink;
+            }
+
+            return new ODataEntryAnnotations
+            {
+                Id = id,
+                TypeName = odataEntry.TypeName,
+                ReadLink = readLink,
+                EditLink = editLink,
+                ETag = odataEntry.ETag,
+                AssociationLinks = odataEntry.AssociationLinks == null
+                    ? null
+                    : new List<ODataEntryAnnotations.AssociationLink>(
+                    odataEntry.AssociationLinks.Select(x => new ODataEntryAnnotations.AssociationLink
+                    {
+                        Name = x.Name,
+                        Uri = x.Url,
+                    })),
+                MediaResource = CreateAnnotations(odataEntry.MediaResource),
+                InstanceAnnotations = odataEntry.InstanceAnnotations,
+            };
+        }
+
+        private ODataMediaAnnotations CreateAnnotations(ODataStreamReferenceValue value)
+        {
+            return value == null ? null : new ODataMediaAnnotations
+            {
+                ContentType = value.ContentType,
+                ReadLink = value.ReadLink,
+                EditLink = value.EditLink,
+                ETag = value.ETag,
             };
         }
 

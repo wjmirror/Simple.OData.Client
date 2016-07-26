@@ -320,11 +320,18 @@ namespace Simple.OData.Client
         {
             if (_settings.IncludeAnnotationsInResults && entryData.ContainsKey(FluentCommand.ResourceTypeLiteral))
             {
-                entryData.Remove(FluentCommand.ResourceTypeLiteral);
-            }
-            if (_settings.IncludeAnnotationsInResults && entryData.ContainsKey(FluentCommand.AnnotationsLiteral))
-            {
-                entryData.Remove(FluentCommand.AnnotationsLiteral);
+                var removeKeys = new List<string>();
+                foreach (var entry in entryData)
+                {
+                    if (entry.Key == FluentCommand.ResourceTypeLiteral)
+                        removeKeys.Add(entry.Key);
+                    if (entry.Key == FluentCommand.AnnotationsLiteral || entry.Key.StartsWith(FluentCommand.AnnotationsLiteral + "_"))
+                        removeKeys.Add(entry.Key);
+                }
+                foreach (var key in removeKeys)
+                {
+                    entryData.Remove(key);
+                }
             }
         }
 

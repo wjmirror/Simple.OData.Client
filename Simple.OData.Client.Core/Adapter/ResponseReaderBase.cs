@@ -65,19 +65,21 @@ namespace Simple.OData.Client
         protected void EndFeed(Stack<ResponseNode> nodeStack, ODataFeedAnnotations feedAnnotations, ref ResponseNode rootNode)
         {
             var feedNode = nodeStack.Pop();
+            if (feedNode.FeedAnnotations == null)
+                feedNode.FeedAnnotations = feedAnnotations;
+            else
+                feedNode.FeedAnnotations.Merge(feedAnnotations);
+
             var entries = feedNode.Feed;
             if (nodeStack.Any())
-                nodeStack.Peek().Feed = entries;
-            else
-                rootNode = feedNode;
-
-            if (feedNode.FeedAnnotations == null)
             {
-                feedNode.FeedAnnotations = feedAnnotations;
+                var parent = nodeStack.Peek();
+                parent.Feed = entries;
+                parent.FeedAnnotations = feedNode.FeedAnnotations;
             }
             else
             {
-                feedNode.FeedAnnotations.Merge(feedAnnotations);
+                rootNode = feedNode;
             }
         }
 
@@ -93,6 +95,7 @@ namespace Simple.OData.Client
         {
             var entryNode = nodeStack.Pop();
             ConvertEntry(entryNode, entry, includeAnnotationsInResults);
+
             if (nodeStack.Any())
             {
                 if (nodeStack.Peek().Feed != null)
@@ -114,16 +117,19 @@ namespace Simple.OData.Client
             });
         }
 
-        protected void EndNavigationLink(Stack<ResponseNode> nodeStack)
+        protected void EndNavigationLink(Stack<ResponseNode> nodeStack, bool includeAnnotationsInResults)
         {
             var linkNode = nodeStack.Pop();
+            var parent = nodeStack.Peek();
             if (linkNode.Value != null)
             {
                 var linkValue = linkNode.Value;
-                if (linkNode.Value is IDictionary<string, object> && !(linkNode.Value as IDictionary<string, object>).Any())
+                if (linkValue is IDictionary<string, object> && !(linkValue as IDictionary<string, object>).Any())
                     linkValue = null;
-                nodeStack.Peek().Entry.Add(linkNode.LinkName, linkValue);
+                parent.Entry.Add(linkNode.LinkName, linkValue);
             }
+            if (includeAnnotationsInResults && linkNode.FeedAnnotations != null)
+                parent.Entry.Add(string.Format("{0}_{1}", FluentCommand.AnnotationsLiteral, linkNode.LinkName), linkNode.FeedAnnotations);
         }
     }
 }
