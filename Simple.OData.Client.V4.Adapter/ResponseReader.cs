@@ -46,7 +46,7 @@ namespace Simple.OData.Client.V4.Adapter
                     }
                     else
                     {
-                        var text = Utils.StreamToString(await responseMessage.GetStreamAsync(), responseMessage is ODataBatchOperationResponseMessage);
+                        var text = Utils.StreamToString(await responseMessage.GetStreamAsync().ConfigureAwait(false), responseMessage is ODataBatchOperationResponseMessage);
                         return ODataResponse.FromFeed(new[] { new Dictionary<string, object>()
                         {
                             { FluentCommand.ResultLiteral, text }
@@ -55,7 +55,7 @@ namespace Simple.OData.Client.V4.Adapter
                 }
                 else if (payloadKind.Any(x => x.PayloadKind == ODataPayloadKind.Batch))
                 {
-                    return await ReadResponse(messageReader.CreateODataBatchReader(), includeAnnotationsInResults);
+                    return await ReadResponse(messageReader.CreateODataBatchReader(), includeAnnotationsInResults).ConfigureAwait(false);
                 }
                 else if (payloadKind.Any(x => x.PayloadKind == ODataPayloadKind.Feed))
                 {
@@ -97,9 +97,9 @@ namespace Simple.OData.Client.V4.Adapter
                         else if (operationMessage.StatusCode >= (int)HttpStatusCode.BadRequest)
                             batch.Add(ODataResponse.FromStatusCode(
                                 operationMessage.StatusCode,
-                                await operationMessage.GetStreamAsync()));
+                                await operationMessage.GetStreamAsync().ConfigureAwait(false)));
                         else
-                            batch.Add(await GetResponseAsync(operationMessage));
+                            batch.Add(await GetResponseAsync(operationMessage).ConfigureAwait(false));
                         break;
                     case ODataBatchReaderState.ChangesetEnd:
                         break;
