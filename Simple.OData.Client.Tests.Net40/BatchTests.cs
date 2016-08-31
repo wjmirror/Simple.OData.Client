@@ -370,7 +370,7 @@ namespace Simple.OData.Client.Tests
                 .FindScalarAsync<int>();
             await batch.ExecuteAsync();
 
-            Assert.Equal(77, count);
+            Assert.Equal(ExpectedCountOfProducts, count);
         }
     }
 }
