@@ -397,7 +397,6 @@ namespace Simple.OData.Client.Tests
                 .As("Ships")
                 .FindEntriesAsync();
             Assert.Equal("Titanic", transport.Single()["ShipName"]);
-//            Assert.Equal("Ships", transport.Single()[FluentCommand.ResourceTypeLiteral]);
             Assert.Equal("Ship", transport.Single()[FluentCommand.ResourceTypeLiteral]);
         }
 
