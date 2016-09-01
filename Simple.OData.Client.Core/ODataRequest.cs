@@ -52,6 +52,7 @@ namespace Simple.OData.Client
         public string Method { get; private set; }
         public IDictionary<string, object> EntryData { get; private set; }
         public bool IsLink { get; set; }
+        public ODataPayloadFormat UsePayloadFormat { get; set; }
         public bool ReturnsScalarResult { get; set; }
         public bool ResultRequired { get; set; }
         public bool CheckOptimisticConcurrency { get; set; }
@@ -90,7 +91,11 @@ namespace Simple.OData.Client
 
         private string GetContentType()
         {
-            switch (this._payloadFormat)
+            var payloadFormat = this.UsePayloadFormat != ODataPayloadFormat.Unspecified
+                ? this.UsePayloadFormat
+                : _payloadFormat;
+
+            switch (payloadFormat)
             {
                 default:
                 case ODataPayloadFormat.Atom:
