@@ -247,7 +247,11 @@ namespace Simple.OData.Client.V3.Adapter
                 DisableMessageStreamDisposal = !IsBatch,
             };
             ODataFormat contentType;
-            if (preferredContentType == null)
+            if (preferredContentType != null)
+            {
+                contentType = preferredContentType;
+            }
+            else
             {
                 switch (_session.Settings.PayloadFormat)
                 {
@@ -268,10 +272,6 @@ namespace Simple.OData.Client.V3.Adapter
                         }
                         break;
                 }
-            }
-            else
-            {
-                contentType = preferredContentType;
             }
             settings.SetContentType(contentType);
             return settings;

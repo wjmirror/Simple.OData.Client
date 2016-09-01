@@ -260,7 +260,7 @@ namespace Simple.OData.Client.V4.Adapter
                 return navigationProperty.Type.Definition as IEdmEntityType;
         }
 
-        private ODataMessageWriterSettings GetWriterSettings()
+        private ODataMessageWriterSettings GetWriterSettings(ODataFormat preferredContentType = null)
         {
             var settings = new ODataMessageWriterSettings()
             {
@@ -271,18 +271,27 @@ namespace Simple.OData.Client.V4.Adapter
                 Indent = true,
                 DisableMessageStreamDisposal = !IsBatch,
             };
-            switch (_session.Settings.PayloadFormat)
+            ODataFormat contentType;
+            if (preferredContentType != null)
             {
-                case ODataPayloadFormat.Atom:
-#pragma warning disable 0618
-                    settings.SetContentType(ODataFormat.Atom);
-#pragma warning restore 0618
-                    break;
-                case ODataPayloadFormat.Json:
-                default:
-                    settings.SetContentType(ODataFormat.Json);
-                    break;
+                contentType = preferredContentType;
             }
+            else
+            {
+                switch (_session.Settings.PayloadFormat)
+                {
+                    case ODataPayloadFormat.Atom:
+#pragma warning disable 0618
+                        contentType = ODataFormat.Atom;
+#pragma warning restore 0618
+                        break;
+                    case ODataPayloadFormat.Json:
+                    default:
+                        contentType = ODataFormat.Json;
+                        break;
+                }
+            }
+            settings.SetContentType(contentType);
             return settings;
         }
 
