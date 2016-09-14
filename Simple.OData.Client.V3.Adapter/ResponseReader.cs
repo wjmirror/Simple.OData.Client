@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Microsoft.Data.Edm;
+using Microsoft.Data.OData;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Microsoft.Data.Edm;
-using Microsoft.Data.OData;
 
 #pragma warning disable 1591
 
@@ -34,6 +34,8 @@ namespace Simple.OData.Client.V3.Adapter
 #endif
         {
             var readerSettings = new ODataMessageReaderSettings();
+            if (_session.Settings.IgnoreUnmappedProperties)
+                readerSettings.UndeclaredPropertyBehaviorKinds = ODataUndeclaredPropertyBehaviorKinds.IgnoreUndeclaredValueProperty;
             readerSettings.MessageQuotas.MaxReceivedMessageSize = Int32.MaxValue;
             readerSettings.ShouldIncludeAnnotation = x => _session.Settings.IncludeAnnotationsInResults;
             using (var messageReader = new ODataMessageReader(responseMessage, readerSettings, _model))
@@ -113,6 +115,7 @@ namespace Simple.OData.Client.V3.Adapter
                 {
                     case ODataBatchReaderState.ChangesetStart:
                         break;
+
                     case ODataBatchReaderState.Operation:
                         var operationMessage = odataReader.CreateOperationResponseMessage();
                         if (operationMessage.StatusCode == (int)HttpStatusCode.NoContent)
@@ -128,6 +131,7 @@ namespace Simple.OData.Client.V3.Adapter
                         else
                             batch.Add(await GetResponseAsync(operationMessage).ConfigureAwait(false));
                         break;
+
                     case ODataBatchReaderState.ChangesetEnd:
                         break;
                 }
