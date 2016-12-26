@@ -121,6 +121,7 @@
     <Compile Include="Entities\Product.cs" />
     <Compile Include="Entities\Ship.cs" />
     <Compile Include="Entities\Transport.cs" />
+    <Compile Include="Entities\TypeWithGuidKey.cs" />
     <Compile Include="ExpansionTests.cs" />
     <Compile Include="Extensions\DictionaryExtensionsTests.cs" />
     <Compile Include="Extensions\StringExtensionTests.cs" />
