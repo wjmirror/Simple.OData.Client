@@ -5,25 +5,19 @@ namespace Simple.OData.Client
 {
     public class HttpConnection : IDisposable
     {
-        private HttpMessageHandler _messageHandler;
         private HttpClient _httpClient;
 
-        public HttpClient HttpClient { get {  return _httpClient; } }
+        public HttpClient HttpClient => _httpClient;
 
         public HttpConnection(ODataClientSettings settings)
         {
-            _messageHandler = CreateMessageHandler(settings);
-            _httpClient = CreateHttpClient(settings, _messageHandler);
+             var messageHandler = CreateMessageHandler(settings);
+            _httpClient = CreateHttpClient(settings, messageHandler);
         }
 
         public void Dispose()
         {
-            if (_messageHandler != null)
-            {
-                _messageHandler.Dispose();
-                _messageHandler = null;
-            }
-
+            // HttpClient will dispose the handler itself
             if (_httpClient != null)
             {
                 _httpClient.Dispose();
@@ -33,17 +27,13 @@ namespace Simple.OData.Client
 
         private static HttpClient CreateHttpClient(ODataClientSettings settings, HttpMessageHandler messageHandler)
         {
+            var client = new HttpClient(messageHandler);
             if (settings.RequestTimeout >= TimeSpan.FromMilliseconds(1))
             {
-                return new HttpClient(messageHandler)
-                {
-                    Timeout = settings.RequestTimeout,
-                };
+                client.Timeout = settings.RequestTimeout;
             }
-            else
-            {
-                return new HttpClient(messageHandler);
-            }
+
+            return client;
         }
 
         private static HttpMessageHandler CreateMessageHandler(ODataClientSettings settings)
@@ -52,27 +42,22 @@ namespace Simple.OData.Client
             {
                 return settings.OnCreateMessageHandler();
             }
-            else
+
+            var clientHandler = new HttpClientHandler();
+
+            // Perform this test to prevent failure to access Credentials/PreAuthenticate properties on SL5
+            if (settings.Credentials != null)
             {
-                var clientHandler = new HttpClientHandler();
-
-                // Perform this test to prevent failure to access Credentials/PreAuthenticate properties on SL5
-                if (settings.Credentials != null)
+                clientHandler.Credentials = settings.Credentials;
+                if (clientHandler.SupportsPreAuthenticate())
                 {
-                    clientHandler.Credentials = settings.Credentials;
-                    if (clientHandler.SupportsPreAuthenticate())
-                    {
-                        clientHandler.PreAuthenticate = true;
-                    }
+                    clientHandler.PreAuthenticate = true;
                 }
-
-                if (settings.OnApplyClientHandler != null)
-                {
-                    settings.OnApplyClientHandler(clientHandler);
-                }
-
-                return clientHandler;
             }
+
+            settings.OnApplyClientHandler?.Invoke(clientHandler);
+
+            return clientHandler;
         }
     }
 }
