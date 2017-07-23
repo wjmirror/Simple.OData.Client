@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Simple.OData.Client
 {
@@ -171,12 +172,22 @@ namespace Simple.OData.Client
         public Action<HttpRequestMessage> BeforeRequest { get; set; }
 
         /// <summary>
+        /// Gets or sets the task executed before the OData request.
+        /// </summary>
+        public Func<HttpRequestMessage, Task> BeforeRequestAsync { get; set; }
+
+        /// <summary>
         /// Gets or sets the action executed after the OData request.
         /// </summary>
         /// <value>
         /// The action on <see cref="HttpResponseMessage"/>.
         /// </value>
         public Action<HttpResponseMessage> AfterResponse { get; set; }
+
+        /// <summary>
+        /// Gets or sets the task executed after the OData request.
+        /// </summary>
+        public Func<HttpResponseMessage, Task> AfterResponseAsync { get; set; }
 
         /// <summary>
         /// Gets or sets the method that will be executed to write trace messages.
@@ -240,7 +251,9 @@ namespace Simple.OData.Client
             this.OnCreateMessageHandler = session.Settings.OnCreateMessageHandler;
             this.OnApplyClientHandler = session.Settings.OnApplyClientHandler;
             this.BeforeRequest = session.Settings.BeforeRequest;
+            this.BeforeRequestAsync = session.Settings.BeforeRequestAsync;
             this.AfterResponse = session.Settings.AfterResponse;
+            this.AfterResponseAsync = session.Settings.AfterResponseAsync;
             this.OnTrace = session.Settings.OnTrace;
             this.TraceFilter = session.Settings.TraceFilter;
         }

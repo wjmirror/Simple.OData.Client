@@ -180,7 +180,28 @@ namespace Simple.OData.Client.Tests
             var settings = new ODataClientSettings
             {
                 BaseUri = _serviceUri,
-                BeforeRequest = x => x.Method = new HttpMethod("PUT"),
+                BeforeRequest = x => x.Method = new HttpMethod("PUT")
+            };
+            var client = new ODataClient(settings);
+            await AssertThrowsAsync<WebRequestException>(async () => await client.FindEntriesAsync("Products"));
+        }
+
+        [Fact]
+        public async Task InterceptRequestAsync()
+        {
+            var settings = new ODataClientSettings
+            {
+                BaseUri = _serviceUri,
+                BeforeRequestAsync = x =>
+                {
+                    x.Method = new HttpMethod("PUT");
+
+                    var tcs = new TaskCompletionSource<HttpRequestMessage>();
+                    var task = tcs.Task;
+                    tcs.SetResult(x);
+
+                    return task;
+                }
             };
             var client = new ODataClient(settings);
             await AssertThrowsAsync<WebRequestException>(async () => await client.FindEntriesAsync("Products"));
@@ -193,6 +214,18 @@ namespace Simple.OData.Client.Tests
             {
                 BaseUri = _serviceUri,
                 AfterResponse = x => { throw new InvalidOperationException(); },
+            };
+            var client = new ODataClient(settings);
+            await AssertThrowsAsync<InvalidOperationException>(async () => await client.FindEntriesAsync("Products"));
+        }
+
+        [Fact]
+        public async Task InterceptResponseAsync()
+        {
+            var settings = new ODataClientSettings
+            {
+                BaseUri = _serviceUri,
+                AfterResponseAsync = x => { throw new InvalidOperationException(); },
             };
             var client = new ODataClient(settings);
             await AssertThrowsAsync<InvalidOperationException>(async () => await client.FindEntriesAsync("Products"));

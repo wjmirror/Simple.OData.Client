@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -27,7 +25,7 @@ namespace Simple.OData.Client
                     ? new HttpConnection(_session.Settings)
                     : _session.GetHttpConnection();
 
-                PreExecute(httpConnection.HttpClient, request);
+                await PreExecuteAsync(httpConnection.HttpClient, request).ConfigureAwait(false);
 
                 _session.Trace("{0} request: {1}", request.Method, request.RequestMessage.RequestUri.AbsoluteUri);
                 if (request.RequestMessage.Content != null && (_session.Settings.TraceFilter & ODataTrace.RequestContent) != 0)
@@ -73,7 +71,7 @@ namespace Simple.OData.Client
             }
         }
 
-        private void PreExecute(HttpClient httpClient, ODataRequest request)
+        private async Task PreExecuteAsync(HttpClient httpClient, ODataRequest request)
         {
             if (request.Accept != null)
             {
@@ -99,12 +97,22 @@ namespace Simple.OData.Client
 
             if (_session.Settings.BeforeRequest != null)
                 _session.Settings.BeforeRequest(request.RequestMessage);
+
+            if (_session.Settings.BeforeRequestAsync != null)
+            {
+                await _session.Settings.BeforeRequestAsync(request.RequestMessage).ConfigureAwait(false);
+            }
         }
 
         private async Task PostExecute(HttpResponseMessage responseMessage)
         {
             if (_session.Settings.AfterResponse != null)
                 _session.Settings.AfterResponse(responseMessage);
+
+            if (_session.Settings.AfterResponseAsync != null)
+            {
+                await _session.Settings.AfterResponseAsync(responseMessage).ConfigureAwait(false);
+            }
 
             if (!responseMessage.IsSuccessStatusCode)
             {
