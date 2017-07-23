@@ -37,6 +37,17 @@ namespace Simple.OData.Client
             throw new NotSupportedException(string.Format("OData protocols {0} are not supported", string.Join(",", protocolVersions)));
         }
 
+        public IODataAdapter CreateAdapter(MetadataCache metadata)
+        {
+            foreach (var protocolVersion in metadata.ProtocolVersions)
+            {
+                var loadAdapter = GetAdapterLoader(protocolVersion, metadata.MetadataDocument);
+                if (loadAdapter != null)
+                    return loadAdapter();
+            }
+            throw new NotSupportedException(string.Format("OData protocols {0} are not supported", string.Join(",", metadata.ProtocolVersions)));
+        }
+
         public IODataAdapter CreateAdapter(string metadataString)
         {
             var protocolVersion = GetMetadataProtocolVersion(metadataString);
