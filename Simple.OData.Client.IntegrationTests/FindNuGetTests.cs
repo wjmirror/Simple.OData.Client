@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -47,13 +46,38 @@ namespace Simple.OData.Client.Tests
         [Fact]
         public async Task FindEntryNuGetV2MultiThread()
         {
-            MetadataCache.ClearAll();
+            MetadataCache.Clear();
 
             var tasks = new List<Task>();
             metadataCalls = 0;
 
             for (var i = 0; i < 10; i++)
             {
+                tasks.Add(FindEntryNuGetV2());
+            }
+
+            await Task.WhenAll(tasks);
+
+            Assert.Equal(1, metadataCalls);
+        }
+
+        [Fact]
+        public async Task FindEntryNuGetV2MultiThreadWithDelays()
+        {
+            int taskCount = 100;
+            Random random = new Random();
+            MetadataCache.Clear();
+
+            var tasks = new List<Task>();
+            metadataCalls = 0;
+            
+            for (var i = 0; i < taskCount; i++)
+            {
+                if (random.NextDouble() < 0.25)
+                {
+                    await Task.Delay(random.Next(1, 250));
+                }
+
                 tasks.Add(FindEntryNuGetV2());
             }
 

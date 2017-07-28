@@ -1,22 +1,103 @@
 ﻿using System;
+#if NET40
+using System.Collections.Concurrent;
+#endif
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
-using System.Xml;
 
 namespace Simple.OData.Client
 {
     class MetadataCache
     {
-        public static readonly SimpleDictionary<string, MetadataCache> Instances = new SimpleDictionary<string, MetadataCache>();
+#if NET40
+        static readonly ConcurrentDictionary<string, MetadataCache> _instances = new ConcurrentDictionary<string, MetadataCache>();
+#else
+        static readonly object metadataLock = new object();
+        static readonly IDictionary<string, MetadataCache> _instances = new Dictionary<string, MetadataCache>();
+#endif
+
+        public static void Clear()
+        {
+#if NET40
+            _instances.Clear();
+#else
+            lock (metadataLock)
+            {
+                _instances.Clear();
+            }
+#endif
+        }
+
+        public static void Clear(string key)
+        {
+#if NET40
+            MetadataCache _ignored;
+            _instances.TryRemove(key, out _ignored);
+#else
+            lock (metadataLock)
+            {
+                _instances.Remove(key);
+            }
+#endif
+        }
+
+        public static MetadataCache GetOrAdd(string key, Func<string, MetadataCache> valueFactory)
+        {
+#if NET40
+            return _instances.GetOrAdd(key, valueFactory);
+#else
+            lock (metadataLock)
+            {
+                MetadataCache found;
+                if (!_instances.TryGetValue(key, out found))
+                {
+                    _instances[key] = found = valueFactory(key);
+                }
+
+                return found;
+            }
+#endif
+        }
+
+        private readonly string _key;
+        private Func<ISession, IODataAdapter> _adapterFactory;
 
         private string _metadataDocument;
+        private Task _resolutionTask;
 
-        public bool IsResolved()
+        public MetadataCache(string key)
         {
-            return _metadataDocument != null;
+            if (String.IsNullOrWhiteSpace(key))
+                throw new ArgumentNullException("key");
+
+            _key = key;
+        }
+
+        public MetadataCache(string key, string metadataDocument)
+        {
+            if (String.IsNullOrWhiteSpace(key))
+                throw new ArgumentNullException("key");
+            if (String.IsNullOrWhiteSpace(metadataDocument))
+                throw new ArgumentNullException("metadataDocument");
+
+            _key = key;
+            SetMetadataDocument(metadataDocument);
+
+#if NET40 || SILVERLIGHT
+            var tcs = new TaskCompletionSource<string>();
+            tcs.SetResult(metadataDocument);
+            _resolutionTask = tcs.Task;
+#else
+            _resolutionTask = Task.FromResult(metadataDocument);
+#endif
+        }
+
+        public string Key
+        {
+            get
+            {
+                return _key;
+            }
         }
 
         public string MetadataDocument
@@ -30,95 +111,28 @@ namespace Simple.OData.Client
             }
         }
 
-        public IList<string> ProtocolVersions { get; private set; }
-
-        public static void ClearAll()
+        public Task Resolved
         {
-            foreach (var md in Instances.Values)
+            get
             {
-                md.Clear();
+                return _resolutionTask;
             }
         }
 
-        public void Clear()
+        public void SetMetadataDocument(Task<string> metadataResolution)
         {
-            lock (this)
-            {
-                _metadataDocument = null;
-                ProtocolVersions = new List<string>();
-            }
+            _resolutionTask = metadataResolution.ContinueWith(t => SetMetadataDocument(t.Result));
         }
 
         public void SetMetadataDocument(string metadataString)
         {
             _metadataDocument = metadataString;
-
-            ProtocolVersions = new List<string>{ GetMetadataProtocolVersion(metadataString) };
+            _adapterFactory = new AdapterFactory().CreateAdapter(metadataString);
         }
 
-        public async Task SetMetadataDocument(HttpResponseMessage response)
+        public IODataAdapter GetODataAdapter(ISession session)
         {
-            _metadataDocument = await GetMetadataDocumentAsync(response).ConfigureAwait(false);
-
-            var x = await GetSupportedProtocolVersionsAsync(response).ConfigureAwait(false);
-            ProtocolVersions = new List<string>(x);
-        }
-
-        private async Task<string> GetMetadataDocumentAsync(HttpResponseMessage response)
-        {
-            return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        }
-
-        private async Task<IEnumerable<string>> GetSupportedProtocolVersionsAsync(HttpResponseMessage response)
-        {
-            IEnumerable<string> headerValues;
-            if (response.Headers.TryGetValues(HttpLiteral.DataServiceVersion, out headerValues) ||
-                response.Headers.TryGetValues(HttpLiteral.ODataVersion, out headerValues))
-            {
-                return headerValues.SelectMany(x => x.Split(';')).Where(x => x.Length > 0);
-            }
-            else
-            {
-                try
-                {
-                    var metadataString = await GetMetadataDocumentAsync(response).ConfigureAwait(false);
-                    var protocolVersion = GetMetadataProtocolVersion(metadataString);
-                    return new[] { protocolVersion };
-                }
-                catch (Exception)
-                {
-                    throw new InvalidOperationException("Unable to identify OData protocol version");
-                }
-            }
-        }
-
-        private string GetMetadataProtocolVersion(string metadataString)
-        {
-            var reader = XmlReader.Create(new StringReader(metadataString));
-            reader.MoveToContent();
-
-            var protocolVersion = reader.GetAttribute("Version");
-
-            if (protocolVersion == ODataProtocolVersion.V1 ||
-                protocolVersion == ODataProtocolVersion.V2 ||
-                protocolVersion == ODataProtocolVersion.V3)
-            {
-                while (reader.Read())
-                {
-                    if (reader.NodeType == XmlNodeType.Element)
-                    {
-                        var version = reader.GetAttribute("m:" + HttpLiteral.MaxDataServiceVersion);
-                        if (string.IsNullOrEmpty(version))
-                            version = reader.GetAttribute("m:" + HttpLiteral.DataServiceVersion);
-                        if (!string.IsNullOrEmpty(version) && string.Compare(version, protocolVersion, StringComparison.Ordinal) > 0)
-                            protocolVersion = version;
-
-                        break;
-                    }
-                }
-            }
-
-            return protocolVersion;
+            return _adapterFactory(session);
         }
     }
 }

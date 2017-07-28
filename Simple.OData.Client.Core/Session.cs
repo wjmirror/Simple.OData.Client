@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -8,7 +9,6 @@ namespace Simple.OData.Client
 {
     class Session : ISession
     {
-        private readonly AdapterFactory _adapterFactory;
         private IODataAdapter _adapter;
         private HttpConnection _httpConnection;
 
@@ -18,14 +18,9 @@ namespace Simple.OData.Client
 
         private Session(Uri baseUri, string metadataString)
         {
-            _adapterFactory = new AdapterFactory(this);
-
-            this.Settings = new ODataClientSettings
-            {
-                BaseUri = baseUri,
-                MetadataDocument = metadataString
-            };
-            this.MetadataCache = MetadataCache.Instances.GetOrAdd(baseUri.AbsoluteUri, new MetadataCache());
+            this.Settings = new ODataClientSettings();
+            this.Settings.BaseUri = baseUri;
+            this.MetadataCache = MetadataCache.GetOrAdd(baseUri.AbsoluteUri, uri => new MetadataCache(uri, metadataString));
             this.Pluralizer = new SimplePluralizer();
         }
 
@@ -34,10 +29,7 @@ namespace Simple.OData.Client
             if (settings.BaseUri == null || string.IsNullOrEmpty(settings.BaseUri.AbsoluteUri))
                 throw new InvalidOperationException("Unable to create client session with no URI specified");
 
-            _adapterFactory = new AdapterFactory(this);
-
             this.Settings = settings;
-            this.MetadataCache = MetadataCache.Instances.GetOrAdd(this.Settings.BaseUri.AbsoluteUri, new MetadataCache());
             this.Pluralizer = new SimplePluralizer();
         }
 
@@ -63,16 +55,43 @@ namespace Simple.OData.Client
 
         public void ClearMetadataCache()
         {
-            // NB Locks internally
-            this.MetadataCache.Clear();
+            var metadataCache = this.MetadataCache;
+            if (metadataCache != null)
+            {
+                MetadataCache.Clear(metadataCache.Key);
+                this.MetadataCache = null;
+            }
         }
 
         public async Task<IODataAdapter> ResolveAdapterAsync(CancellationToken cancellationToken)
         {
+            if (this.MetadataCache == null)
+            {
+                this.MetadataCache =
+                    MetadataCache.GetOrAdd(
+                        this.Settings.BaseUri.AbsoluteUri,
+                        uri =>
+                        {
+                            var cache = new MetadataCache(uri);
+                            cache.SetMetadataDocument(ResolveMetadataAsync(cancellationToken));
+
+                            return cache;
+                        });
+            }
+
+            await this.MetadataCache.Resolved;
+
             if (this.Settings.PayloadFormat == ODataPayloadFormat.Unspecified)
                 this.Settings.PayloadFormat = this.Adapter.DefaultPayloadFormat;
 
             return this.Adapter;
+        }
+
+        private async Task<string> ResolveMetadataAsync(CancellationToken cancellationToken)
+        {
+            var response = await SendMetadataRequestAsync(cancellationToken).ConfigureAwait(false);
+            var metadataDocument = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return metadataDocument;
         }
 
         public IODataAdapter Adapter
@@ -84,7 +103,7 @@ namespace Simple.OData.Client
                     lock (this)
                     {
                         if (_adapter == null)
-                            _adapter = CreateAdapter();
+                            _adapter = this.MetadataCache.GetODataAdapter(this);
                     }
                 }
                 return _adapter;
@@ -124,34 +143,6 @@ namespace Simple.OData.Client
         {
             var request = new ODataRequest(RestVerbs.Get, this, ODataLiteral.Metadata);
             return await new RequestRunner(this).ExecuteRequestAsync(request, cancellationToken).ConfigureAwait(false);
-        }
-
-        private IODataAdapter CreateAdapter()
-        {
-            if (!this.MetadataCache.IsResolved())
-            {
-                // Ok, ensure we only do this once per uri
-                lock (this.MetadataCache)
-                {
-                    // Check again now we have a lock
-                    if (!this.MetadataCache.IsResolved())
-                    {
-                        if (!string.IsNullOrEmpty(this.Settings.MetadataDocument))
-                        {
-                            this.MetadataCache.SetMetadataDocument(this.Settings.MetadataDocument);
-                        }
-                        else
-                        {
-                            var response = SendMetadataRequestAsync(CancellationToken.None).GetAwaiter().GetResult();
-                            // NB Can't do an async retrieval as we are in a critical section
-                            Task.WaitAll(MetadataCache.SetMetadataDocument(response));
-                        }
-                    }
-                }
-            }
-
-            // Will be populated by the time we get here - unless we've flushed the cache on a different thread!
-            return _adapterFactory.CreateAdapter(this.MetadataCache);
         }
     }
 }
