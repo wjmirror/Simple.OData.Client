@@ -18,7 +18,7 @@ namespace Simple.OData.Client.Tests
 
         protected TestBase()
         {
-            MetadataCache.ClearAll();
+            MetadataCache.Clear();
             _client = CreateClient(this.MetadataFile);
         }
 
