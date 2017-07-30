@@ -1,26 +1,36 @@
 ﻿using System;
 using System.Net.Http;
+using Simple.OData.Client.Core.Http;
 
 namespace Simple.OData.Client
 {
     public class HttpConnection : IDisposable
     {
+        public static IHttpClientFactory HttpClientFactory { get; set; }
+
+        static HttpConnection()
+        {
+            HttpClientFactory = new HttpClientFactory();
+        }
+
         private HttpClient _httpClient;
 
         public HttpClient HttpClient => _httpClient;
 
         public HttpConnection(ODataClientSettings settings)
         {
-             var messageHandler = CreateMessageHandler(settings);
-            _httpClient = CreateHttpClient(settings, messageHandler);
+            _httpClient = HttpClientFactory.Create(settings);
+
+            //var messageHandler = CreateMessageHandler(settings);
+            //_httpClient = CreateHttpClient(settings, messageHandler);
         }
 
         public void Dispose()
         {
-            // HttpClient will dispose the handler itself
             if (_httpClient != null)
             {
-                _httpClient.Dispose();
+                // Let the factory handle it as it made it
+                HttpClientFactory.Release(_httpClient);
                 _httpClient = null;
             }
         }
