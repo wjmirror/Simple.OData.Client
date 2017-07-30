@@ -73,7 +73,16 @@ namespace Simple.OData.Client
                         uri =>
                         {
                             var cache = new MetadataCache(uri);
-                            cache.SetMetadataDocument(ResolveMetadataAsync(cancellationToken));
+                            if (!string.IsNullOrEmpty(Settings.MetadataDocument))
+                            {
+                                var tcs = new TaskCompletionSource<string>();
+                                tcs.SetResult(Settings.MetadataDocument);
+                                cache.SetMetadataDocument(tcs.Task);
+                            }
+                            else
+                            {
+                                cache.SetMetadataDocument(ResolveMetadataAsync(cancellationToken));
+                            }
 
                             return cache;
                         });
