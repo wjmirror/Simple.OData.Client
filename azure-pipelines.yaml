@@ -47,6 +47,12 @@ steps:
 # NuGet tool installer
 - task: NuGetToolInstaller@1
 
+# Install code coverage tooling
+- script: |
+    dotnet tool install -g dotnet-reportgenerator-globaltool
+    dotnet tool install -g coverlet.console
+  displayName: Install code coverage tooling
+
 # Restore packages
 - task: NuGetCommand@2
   inputs:
@@ -72,24 +78,40 @@ steps:
     configuration: '$(buildConfiguration)'
     msbuildArgs: '/p:Version=$(Version.GitVersion.NugetVersionV2)'
 
-# Run all unit tests gathering code coverage
+# Run all tests
 # NB Needs SDK 16.1+ for coverlet integration, seem to need --collect for NUnit as well as /CollectCoverage=true
 - task: DotNetCoreCLI@2
-  displayName: 'Unit Tests'
+  displayName: 'Testing'
   inputs:
     command: 'test'
     projects: '$(testProjects)'
-    arguments: '--filter /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura --collect "Code coverage"'
+    arguments: '--logger "trx;LogFileName=testresults.trx"'
+    testRunTitle: 'Test logger'
+    nobuild: true
+
+# Run all tests gathering code coverage
+- task: DotNetCoreCLI@2
+  displayName: 'Testing'
+  inputs:
+    command: 'test'
+    projects: '$(testProjects)'
+    arguments: '/p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=$(Build.SourcesDirectory)/Coverage/'
     testRunTitle: 'Unit Tests'
     nobuild: true
+
+# Generate the report using ReportGenerator (https://github.com/danielpalme/ReportGenerator)
+- script: |
+   reportgenerator -reports:$(Build.SourcesDirectory)/Coverage/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/Coverage/Reports -reporttypes:HtmlInline_AzurePipelines;Cobertura
+  displayName: Create Code coverage report
 
 # Produce the packages
 - task: NuGetCommand@2
   inputs:
     command: 'pack'
-    packagesToPack: '**/*.nuspec -Version $(Version.GitVersion.NugetVersionV2) -SymbolPackageFormat snupkg'
+    packagesToPack: '**/*.nuspec -SymbolPackageFormat snupkg'
     packDestination: '$(Build.ArtifactStagingDirectory)/packages'
-    versioningScheme: 'off'
+    versioningScheme: 'byEnvVar'
+    versionEnvVar: 'GitVersion.NuGetVersionV2'
     includeSymbols: true
 
 # Copy the nuget packages to an artifacts folder
@@ -100,6 +122,13 @@ steps:
 #    contents: '**/*.*nupkg'
 #    flattenFolders: true
 #    targetFolder: '$(Build.ArtifactStagingDirectory)/packages'
+
+# Publish local code coverage
+- task: PublishCodeCoverageResults@1
+  inputs:
+    codeCoverageTool: cobertura
+    summaryFileLocation: $(Build.SourcesDirectory)/Coverage/**/*.xml
+    reportDirectory: $(Build.SourcesDirectory)/Coverage/Reports
 
 # Publish the packages artifacts
 - task: PublishBuildArtifacts@1
