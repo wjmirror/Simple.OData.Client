@@ -52,6 +52,17 @@ steps:
     command: 'restore'
     restoreSolution: '$(solution)'
 
+# Set up for SonarCloud analysis
+- task: SonarCloudPrepare@1
+  continueOnError: true
+  inputs:
+    SonarCloud: 'sonar-cloud'
+    organization: 'simple-odata-client'
+    scannerMode: 'MSBuild'
+    projectKey: 'simple-odata-client_Simple.OData.Client'
+    projectName: 'Simple.OData.Client'
+    projectVersion: '1.0'
+
 # Build the project
 - task: VSBuild@1
   inputs:
@@ -72,21 +83,22 @@ steps:
     nobuild: true
 
 # Produce the packages
-- task: DotNetCoreCLI@2
-  displayName: 'Produce Nuget packages'
+- task: NuGetCommand@2
   inputs:
     command: 'pack'
-    projects: '*.nuspec'
-    arguments: '-Symbols -Version $(Version.GitVersion.NugetVersionV2) -OutputDirectory build\packages -SymbolPackageFormat snupkg'
+    packagesToPack: '**/*.nuspec'
+    packDestination: '$(Build.ArtifactStagingDirectory)/packages'
+    versioningScheme: 'off'
+    buildProperties: '-Symbols -Version $(Version.GitVersion.NugetVersionV2) -SymbolPackageFormat snupkg'
 
 # Copy the nuget packages to an artifacts folder
-- task: CopyFiles@2
-  displayName: 'Copy NuGet packages'
-  inputs:
-    sourceFolder: 'build'
-    contents: '**/*.*nupkg'
-    flattenFolders: true
-    targetFolder: '$(Build.ArtifactStagingDirectory)/packages'
+#- task: CopyFiles@2
+#  displayName: 'Copy NuGet packages'
+#  inputs:
+#    sourceFolder: 'build'
+#    contents: '**/*.*nupkg'
+#    flattenFolders: true
+#    targetFolder: '$(Build.ArtifactStagingDirectory)/packages'
 
 # Publish the packages artifacts
 - task: PublishBuildArtifacts@1
@@ -116,6 +128,10 @@ steps:
 #    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
 #    nuGetFeedType: 'public'
 #    allowPackageConflicts: true
+
+# Perform the analysis and push results to SonarCloud
+- task: SonarCloudAnalyze@1
+  continueOnError: true
 
 # Tag the current branch with the version number
 - script: |
