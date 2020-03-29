@@ -19,7 +19,8 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
   testProjects: '**/*Tests.csproj'
-  publishPackages: false
+  nugetFeed: '5e8114a9-7dc2-44be-acdd-0486502c1218'
+  publishPackages: true
   gitTag: false
 
 pool:
@@ -86,10 +87,10 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: 'pack'
-    packagesToPack: '**/*.nuspec'
+    packagesToPack: '**/*.nuspec -Version $(Version.GitVersion.NugetVersionV2) -SymbolPackageFormat snupkg'
     packDestination: '$(Build.ArtifactStagingDirectory)/packages'
     versioningScheme: 'off'
-    buildProperties: '-Symbols -Version $(Version.GitVersion.NugetVersionV2) -SymbolPackageFormat snupkg'
+    includeSymbols: true
 
 # Copy the nuget packages to an artifacts folder
 #- task: CopyFiles@2
@@ -114,7 +115,7 @@ steps:
   condition: and(succeeded(), eq('$(publishPackages)', 'true'))
   inputs:
     command: 'push'
-    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
     nuGetFeedType: 'internal'
     publishVstsFeed: '$(nugetFeed)'
     allowPackageConflicts: true
@@ -125,7 +126,7 @@ steps:
 #  condition: and(succeeded(), eq('$(publishPackages)', 'true'))
 #  inputs:
 #    command: 'push'
-#    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+#    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg'
 #    nuGetFeedType: 'public'
 #    allowPackageConflicts: true
 

@@ -3,6 +3,7 @@
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <RootNamespace>Simple.OData.Client</RootNamespace>
+    <ProjectGuid>{44533D2F-A4F7-4C60-884A-E7CFD483B8EC}</ProjectGuid>
     <OutputPath>$(SolutionDir)/build/$(Configuration)/$(AssemblyName)/$(TargetFramework)/</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
     <Decription></Decription>

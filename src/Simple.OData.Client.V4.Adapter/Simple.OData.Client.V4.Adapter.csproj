@@ -2,6 +2,7 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <ProjectGuid>{D4F5824D-0846-4300-A1B4-84AD9E196ECB}</ProjectGuid>
     <OutputPath>$(SolutionDir)/build/$(Configuration)/$(AssemblyName)/$(TargetFramework)/</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
   </PropertyGroup>
