@@ -1,0 +1,123 @@
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - develop
+    - release/*
+    - feature/*
+    - support/*
+    - hotfix/*
+#    - refs/tags/*
+  paths:
+    exclude:
+    - docs/*
+    - wiki/*
+
+variables:
+  solution: 'Simple.OData.Client.sln'
+  buildPlatform: 'Any CPU'
+  buildConfiguration: 'Release'
+  testProjects: '**/*Tests.csproj'
+  publishPackages: false
+  gitTag: false
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+# Compute the semantic version of the assemblies/image
+- task: UseGitVersion@5
+  displayName: 'GitVersion'
+  name: Version
+  inputs:
+    versionSpec: '5.x'
+    updateAssemblyInfo: false
+    useConfigFile: true
+    configFilePath: 'GitVersion.yml'
+
+# Update the build version to our SemVer
+- script: echo %Action%%BuildVersion%
+  displayName: 'Set build version'
+  env:
+    Action: '##vso[build.updatebuildnumber]'
+    BuildVersion: '$(Version.GitVersion.NugetVersionV2)-$(Build.BuildId)'
+
+# Restore packages from our feed
+#- task: NuGetCommand@2
+#  inputs:
+#    command: 'restore'
+#    restoreSolution: '$(solution)'
+
+# Build the project
+- task: VSBuild@1
+  inputs:
+    solution: '$(solution)'
+    platform: '$(buildPlatform)'
+    configuration: '$(buildConfiguration)'
+    msbuildArgs: '/p:Version=$(Version.GitVersion.NugetVersionV2)'
+
+# Run all unit tests gathering code coverage
+# NB Needs SDK 16.1+ for coverlet integration, seem to need --collect for NUnit as well as /CollectCoverage=true
+- task: DotNetCoreCLI@2
+  displayName: 'Unit Tests'
+  inputs:
+    command: 'test'
+    projects: '$(testProjects)'
+    arguments: '--filter /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura --collect "Code coverage"'
+    testRunTitle: 'Unit Tests'
+    nobuild: true
+
+# Produce the packages
+- task: DotNetCoreCLI@2
+  displayName: 'Produce Nuget packages'
+  inputs:
+    command: 'pack'
+    projects: '*.nuspec'
+    arguments: '-Symbols -Version $(Version.GitVersion.NugetVersionV2) -OutputDirectory build\packages -SymbolPackageFormat snupkg'
+
+# Copy the nuget packages to an artifacts folder
+- task: CopyFiles@2
+  displayName: 'Copy NuGet packages'
+  inputs:
+    sourceFolder: 'build'
+    contents: '**/*.*nupkg'
+    flattenFolders: true
+    targetFolder: '$(Build.ArtifactStagingDirectory)/packages'
+
+# Publish the packages artifacts
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish nuget artifact'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/packages'
+    ArtifactName: 'packages'
+    publishLocation: 'Container'
+
+# Push the packages to our nuget feed
+- task: NuGetCommand@2
+  displayName: 'Push packages to nuget feed'
+  condition: and(succeeded(), eq('$(publishPackages)', 'true'))
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: '$(nugetFeed)'
+    allowPackageConflicts: true
+
+# And to to NuGet org
+#- task: NuGetCommand@2
+#  displayName: 'Push packages to nuget feed'
+#  condition: and(succeeded(), eq('$(publishPackages)', 'true'))
+#  inputs:
+#    command: 'push'
+#    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+#    nuGetFeedType: 'public'
+#    allowPackageConflicts: true
+
+# Tag the current branch with the version number
+- script: |
+    git tag $(Version.GitVersion.NugetVersionV2)
+    git push origin $(Version.GitVersion.NugetVersionV2)
+  workingDirectory: $(Build.SourcesDirectory)
+  displayName: 'Repository tag'
+  condition: and(and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master')), eq('$(gitTag)', 'true'))

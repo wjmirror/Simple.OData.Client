@@ -1,0 +1,9 @@
+mode: Mainline
+branches:
+    master:
+        tag: ''
+    release:
+        tag: beta
+assembly-informational-format: '{AssemblySemVer} {ShortSha}'
+ignore:
+    sha: []
