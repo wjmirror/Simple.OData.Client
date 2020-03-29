@@ -43,11 +43,14 @@ steps:
     Action: '##vso[build.updatebuildnumber]'
     BuildVersion: '$(Version.GitVersion.NugetVersionV2)-$(Build.BuildId)'
 
-# Restore packages from our feed
-#- task: NuGetCommand@2
-#  inputs:
-#    command: 'restore'
-#    restoreSolution: '$(solution)'
+# NuGet tool installer
+- task: NuGetToolInstaller@1
+
+# Restore packages
+- task: NuGetCommand@2
+  inputs:
+    command: 'restore'
+    restoreSolution: '$(solution)'
 
 # Build the project
 - task: VSBuild@1
