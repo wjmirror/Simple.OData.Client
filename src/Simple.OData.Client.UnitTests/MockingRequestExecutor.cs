@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -319,7 +318,7 @@ namespace Simple.OData.Client.Tests
 
     public static partial class ODataClientSettingsExtensionMethods
     {
-        private const string MockDataDir = @"../../../../MockData";
+        private const string MockDataDir = @"MockData";
 
         public static ODataClientSettings WithNameResolver(this ODataClientSettings settings, INameMatchResolver resolver)
         {

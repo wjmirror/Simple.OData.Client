@@ -168,37 +168,21 @@
   <ItemGroup>
     <Reference Include="System.Web" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="MockData\BatchDynamicTests.AllFailures.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="MockData\BatchDynamicTests.InsertSingleEntityWithMultipleAssociationsSingleBatch.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="MockData\BatchDynamicTests.InsertSingleEntityWithSingleAssociationSingleBatch.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="MockData\BatchDynamicTests.InsertUpdateDeleteSeparateBatches.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="MockData\BatchDynamicTests.MultipleUpdatesSingleBatch.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="MockData\BatchDynamicTests.PartialFailures.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="MockData\BatchDynamicTests.Success.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="MockData\BatchDynamicTests.SuccessWithResults.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="MockData\BatchDynamicTests.UpdateDeleteSingleBatch.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
     <PackageReference Include="BenchmarkDotNet" Version="0.10.14">
     </PackageReference>
   </ItemGroup>
+  <Target Name="CopyFiles" AfterTargets="Compile">
+    <ItemGroup>
+      <MockData Include="$(SolutionDir)\MockData\*.*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(MockData)" 
+      DestinationFiles="@(MockData -> '$(OutDir)MockData/%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" 
+      OverwriteReadOnlyFiles="true" 
+      Retries="3" 
+      RetryDelayMilliseconds="300"
+    />
+  </Target>
 </Project>
