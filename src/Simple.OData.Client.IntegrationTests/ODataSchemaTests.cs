@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Simple.OData.Client.Tests.BasicApi
+namespace Simple.OData.Client.IntegrationTests
 {
     public class ODataSchemaTests
     {

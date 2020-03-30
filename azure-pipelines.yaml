@@ -18,7 +18,7 @@ variables:
   solution: 'Simple.OData.Client.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
-  testProjects: '**/*Tests.csproj'
+  testProjects: '**/*UnitTests.csproj'
   nugetFeed: '5e8114a9-7dc2-44be-acdd-0486502c1218'
   publishPackages: true
   gitTag: false
