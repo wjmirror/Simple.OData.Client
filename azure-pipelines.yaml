@@ -85,17 +85,17 @@ steps:
   inputs:
     command: 'test'
     projects: '$(testProjects)'
-    arguments: '--logger "trx;LogFileName=testresults.trx"'
+    arguments: '--configuration $(Configuration) --logger "trx;LogFileName=testresults.trx"'
     testRunTitle: 'Test logger'
     nobuild: true
 
 # Run all tests gathering code coverage
 - task: DotNetCoreCLI@2
-  displayName: 'Testing'
+  displayName: 'Recording test coverage'
   inputs:
     command: 'test'
     projects: '$(testProjects)'
-    arguments: '/p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=$(Build.SourcesDirectory)/Coverage/'
+    arguments: '--configuration $(Configuration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=$(Build.SourcesDirectory)/Coverage/'
     testRunTitle: 'Unit Tests'
     nobuild: true
 
