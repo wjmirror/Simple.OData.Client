@@ -80,14 +80,14 @@ steps:
 
 # Run all tests
 # NB Needs SDK 16.1+ for coverlet integration, seem to need --collect for NUnit as well as /CollectCoverage=true
-- task: DotNetCoreCLI@2
-  displayName: 'Testing'
-  inputs:
-    command: 'test'
-    projects: '$(testProjects)'
-    arguments: '--configuration $(Configuration) --logger "trx;LogFileName=testresults.trx"'
-    testRunTitle: 'Test logger'
-    nobuild: true
+#- task: DotNetCoreCLI@2
+#  displayName: 'Testing'
+#  inputs:
+#    command: 'test'
+#    projects: '$(testProjects)'
+#    arguments: '--configuration $(buildConfiguration)'
+#    testRunTitle: 'Test logger'
+#    nobuild: true
 
 # Run all tests gathering code coverage
 - task: DotNetCoreCLI@2
@@ -95,7 +95,7 @@ steps:
   inputs:
     command: 'test'
     projects: '$(testProjects)'
-    arguments: '--configuration $(Configuration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=$(Build.SourcesDirectory)/Coverage/'
+    arguments: '--configuration $(buildConfiguration) /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=$(Build.SourcesDirectory)/Coverage/'
     testRunTitle: 'Unit Tests'
     nobuild: true
 
