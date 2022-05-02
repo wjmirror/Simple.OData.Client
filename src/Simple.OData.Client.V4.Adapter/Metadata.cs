@@ -286,6 +286,58 @@ namespace Simple.OData.Client.V4.Adapter
             return !TryGetEntityType(action.ReturnType, out var entityType) ? null : new EntityCollection(entityType.Name);
         }
 
+        public override EntryDetails ParseEntryDetails(string collectionName, IDictionary<string, object> entryData, string contentId = null)
+        {
+            // Copied from MetadataBase so we use caches for the property acquisition
+            var entryDetails = new EntryDetails();
+
+            foreach (var item in entryData)
+            {
+                if (HasStructuralProperty(collectionName, item.Key))
+                {
+                    entryDetails.AddProperty(item.Key, item.Value);
+                }
+                else if (HasNavigationProperty(collectionName, item.Key))
+                {
+                    //add for deep insert
+                    entryDetails.AddProperty(item.Key, item.Value);
+
+                    /*
+                    if (IsNavigationPropertyCollection(collectionName, item.Key))
+                    {
+                        switch (item.Value)
+                        {
+                            case null:
+                                entryDetails.AddLink(item.Key, null, contentId);
+                                break;
+                            case IEnumerable<object> collection:
+                                foreach (var element in collection)
+                                {
+                                    entryDetails.AddLink(item.Key, element, contentId);
+                                }
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        entryDetails.AddLink(item.Key, item.Value, contentId);
+                    }
+                    */
+                }
+                else if (IsOpenType(collectionName))
+                {
+                    entryDetails.HasOpenTypeProperties = true;
+                    entryDetails.AddProperty(item.Key, item.Value);
+                }
+                else if (!IgnoreUnmappedProperties)
+                {
+                    throw new UnresolvableObjectException(item.Key, $"No property or association found for [{item.Key}].");
+                }
+            }
+
+            return entryDetails;
+        }
+
         private IEnumerable<IEdmEntitySet> GetEntitySets()
         {
             return _model.SchemaElements

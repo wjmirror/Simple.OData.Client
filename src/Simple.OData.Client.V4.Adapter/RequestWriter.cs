@@ -45,6 +45,7 @@ namespace Simple.OData.Client.V4.Adapter
             }
         }
 
+        //TODO: Jim, modify here to support deep insert and deep update
         protected override async Task<Stream> WriteEntryContentAsync(string method, string collection, string commandText, IDictionary<string, object> entryData, bool resultRequired)
         {
             var message = IsBatch
@@ -430,6 +431,7 @@ namespace Simple.OData.Client.V4.Adapter
             var entry = new ODataResource { TypeName = typeName };
             root = root ?? entry;
 
+            
             var entryType = _model.FindDeclaredType(entry.TypeName);
             var typeProperties = typeof(IEdmEntityType).IsTypeAssignableFrom(entryType.GetType())
                 ? (entryType as IEdmEntityType).Properties().ToList()
@@ -447,14 +449,73 @@ namespace Simple.OData.Client.V4.Adapter
                 return property?.Type;
             }
 
-            bool isStructural(IEdmTypeReference type) =>
-                type != null && type.TypeKind() == EdmTypeKind.Complex;
-            bool isStructuralCollection(IEdmTypeReference type) =>
-                type != null && type.TypeKind() == EdmTypeKind.Collection && type.AsCollection().ElementType().TypeKind() == EdmTypeKind.Complex;
+            //TODO: This will be failed when a complex type object in DynamicProperties.
+            bool isStructural(IEdmTypeReference type)
+            {
+                return type != null && (type.TypeKind() == EdmTypeKind.Complex || type.TypeKind() == EdmTypeKind.Entity);
+            }
+
+            bool isStructuralCollection(IEdmTypeReference type)
+            {
+                return type != null &&
+                     type.TypeKind() == EdmTypeKind.Collection &&
+                     (type.AsCollection().ElementType().TypeKind() == EdmTypeKind.Complex ||
+                     type.AsCollection().ElementType().TypeKind() == EdmTypeKind.Entity);
+            }
             bool isPrimitive(IEdmTypeReference type) =>
                 !isStructural(type) && !isStructuralCollection(type);
 
+ 
+            var entryProps= new List<ODataProperty>();
+            entry.Properties = entryProps;
+
             var resourceEntry = new ResourceProperties(entry);
+            resourceEntry.CollectionProperties = new Dictionary<string, ODataCollectionValue>();
+            resourceEntry.StructuralProperties = new Dictionary<string, ODataResource>();
+          
+
+            foreach( var prop in properties)
+            {
+                IEdmTypeReference propType = findMatchingPropertyType(prop.Key);
+                if (propType == null)
+                {
+                    var entityType = _model.FindDeclaredType(prop.Value.GetType().FullName);
+                    if (entityType != null)
+                    {
+                        if(entityType.TypeKind== EdmTypeKind.Complex || entityType.TypeKind== EdmTypeKind.Entity)
+                        {
+                            resourceEntry.StructuralProperties.Add(new KeyValuePair<string, ODataResource>(
+                                    findMatchingPropertyName(prop.Key),
+                                    CreateODataEntry(entityType.FullName(), prop.Value.ToDictionary(TypeCache), root)));
+
+                            continue;
+                        }
+                    }
+                }
+
+                if(isStructuralCollection(propType))
+                {
+                    resourceEntry.CollectionProperties.Add(new KeyValuePair<string, ODataCollectionValue>(
+                        findMatchingPropertyName(prop.Key),
+                        GetPropertyValue(typeProperties, prop.Key, prop.Value, root) as ODataCollectionValue));
+                }
+                else if (isStructural(propType))
+                {
+                    resourceEntry.StructuralProperties.Add(new KeyValuePair<string, ODataResource>(
+                        findMatchingPropertyName(prop.Key),
+                        GetPropertyValue(typeProperties, prop.Key, prop.Value, root) as ODataResource));
+                }
+                else //Primitive properties
+                {
+                    entryProps.Add(new ODataProperty
+                    {
+                        Name = findMatchingPropertyName(prop.Key),
+                        Value = GetPropertyValue(typeProperties, prop.Key, prop.Value, root)
+                    });
+                }
+            }
+
+            /*
             entry.Properties = properties
                 .Where(x => isPrimitive(findMatchingPropertyType(x.Key)))
                 .Select(x => new ODataProperty
@@ -474,6 +535,8 @@ namespace Simple.OData.Client.V4.Adapter
                     findMatchingPropertyName(x.Key),
                     GetPropertyValue(typeProperties, x.Key, x.Value, root) as ODataResource))
                 .ToDictionary();
+            */
+
             _resourceEntryMap.Add(entry, resourceEntry);
             if (root != null && _resourceEntries.TryGetValue(root, out var entries))
                 entries.Add(entry);
@@ -494,6 +557,8 @@ namespace Simple.OData.Client.V4.Adapter
 
             switch (propertyType.TypeKind())
             {
+                case EdmTypeKind.Entity:
+                    return CreateODataEntry(propertyType.FullName(), value.ToDictionary(TypeCache), root);
                 case EdmTypeKind.Complex:
                     if (Converter.HasObjectConverter(value.GetType()))
                     {

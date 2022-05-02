@@ -135,7 +135,7 @@ namespace Simple.OData.Client
             return segments.Count() == 2 && SegmentsIncludeTypeSpecification(segments);
         }
 
-        public EntryDetails ParseEntryDetails(string collectionName, IDictionary<string, object> entryData, string contentId = null)
+        public virtual EntryDetails ParseEntryDetails(string collectionName, IDictionary<string, object> entryData, string contentId = null)
         {
             var entryDetails = new EntryDetails();
 

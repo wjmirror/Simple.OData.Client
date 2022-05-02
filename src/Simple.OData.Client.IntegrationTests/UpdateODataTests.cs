@@ -164,8 +164,7 @@ namespace Simple.OData.Client.Tests
             await _client
                 .For("Products")
                 .Key(product["ID"])
-                .Set(new Entry { { ProductCategoryName, ProductCategoryLinkFunc(category) } })
-                .UpdateEntryAsync();
+                .LinkEntryAsync("Category", category);
 
             product = await _client
                 .For("Products")
